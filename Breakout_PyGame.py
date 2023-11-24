@@ -1,6 +1,7 @@
 import pygame
 import sys
 import random
+from PingPongBall import Ball
 from Brick import Brick
 
 # Initialize Pygame
@@ -8,7 +9,7 @@ pygame.init()
 
 # Set up some constants
 WIDTH, HEIGHT = 800, 600
-BALL_RADIUS = 10
+
 PADDLE_WIDTH, PADDLE_HEIGHT = 100, 20
 BRICK_WIDTH, BRICK_HEIGHT = 50, 20
 BRICK_COLS, BRICK_ROWS = 10, 5
@@ -23,52 +24,11 @@ paddle_vel = 12
 # Set up the bricks
 bricks = []
 level = 1
-lives = 3
+lives = 5
 score = 0
 
 def draw_paddle(paddle_pos, screen):
     pygame.draw.rect(screen, (255, 255, 255), (paddle_pos[0], paddle_pos[1], PADDLE_WIDTH, PADDLE_HEIGHT))
-class Ball:
-    def __init__(self, pos, vel):
-        self.pos = pos
-        self.vel = vel
-
-    def move(self):
-        self.pos[0] += self.vel[0]
-        self.pos[1] += self.vel[1]
-
-    def draw(self, screen):
-        pygame.draw.circle(screen, (255, 255, 255), self.pos, BALL_RADIUS)
-
-    def bounce(self, width, height):
-        if self.pos[0] < BALL_RADIUS or self.pos[0] > width - BALL_RADIUS:
-            self.vel[0] *= -1
-        if self.pos[1] < BALL_RADIUS or self.pos[1] > height - BALL_RADIUS:
-            self.vel[1] *= -1
-
-    def update(self):
-        self.pos[0] += self.vel[0]
-        self.pos[1] += self.vel[1]
-
-        # Bounce off the edges of the screen
-        if self.pos[0] < BALL_RADIUS or self.pos[0] > WIDTH - BALL_RADIUS:
-            self.vel[0] *= -1
-        if self.pos[1] < BALL_RADIUS or self.pos[1] > HEIGHT - BALL_RADIUS:
-            self.vel[1] *= -1
-    def check_collision(self, paddle_pos):
-        if self.pos[1] + BALL_RADIUS > paddle_pos[1] and \
-                self.pos[0] + BALL_RADIUS > paddle_pos[0] and \
-                self.pos[0] - BALL_RADIUS < paddle_pos[0] + PADDLE_WIDTH:
-            self.vel[1] *= -1  # Change the ball's y-velocity when it collides with the paddle
-            return True
-        return False
-
-    def set_velocity(self, vel):
-        self.vel = vel
-
-# Initialize the ball
-balls = [Ball([WIDTH // 2, HEIGHT // 2], [0, 0])]  # List of balls
-balls[0].set_velocity([random.randint(1, 5), random.randint(1, 5)])
 
 def draw_bricks(bricks, screen):
     for brick in bricks:
@@ -84,7 +44,13 @@ def generate_bricks(level):
 
 generate_bricks(level)
 
+
+
 # Game loop
+# Initialize the ball
+balls = [Ball([WIDTH // 2, HEIGHT // 2], [0, 0])]  # List of balls
+balls[0].set_velocity([random.randint(3, 5), random.randint(3, 5)])
+
 paused = False
 while True:
     for event in pygame.event.get():
@@ -110,7 +76,7 @@ while True:
             paddle_pos[0] = WIDTH - PADDLE_WIDTH
 
         for ball in balls:
-            ball.update()
+            ball.update(WIDTH, HEIGHT)
             ball.draw(screen)
             # Move the ball
             ball.move()
@@ -119,18 +85,28 @@ while True:
             ball.bounce(WIDTH, HEIGHT)
 
             # Bounce the ball off the paddle
-            ball.check_collision(paddle_pos)
+            ball.check_collision(paddle_pos, PADDLE_WIDTH)
 
             # Check for collision with bottom of screen
-            if ball.pos[1] > HEIGHT - 10:
-                lives -= 1
-                if lives == 0:
-                    print("You lose")
-                    pygame.quit()
-                    sys.exit()
-                else:
-                    # Reset the ball's position and velocity
-                    ball.pos = [WIDTH // 2, HEIGHT // 2]
+            if (ball.pos[1] > HEIGHT - 14):
+                if (len(balls) > 1):
+                    #print(f"ping pongs {len(balls)}")
+                    balls.remove(ball)
+                elif (len(balls) == 1):
+                    lives -= 1
+                    if lives == 0:
+                        print("You lose")
+                        pygame.quit()
+                        sys.exit()
+                    else:
+                        # Reset the ball's position and velocity
+                        balls.remove(ball)
+                        new_ball = Ball([WIDTH // 2, HEIGHT // 2], [random.randint(2, 3), random.randint(2, 3)])
+                        balls.append(new_ball)
+                        new_ball.draw(screen)
+                        #ball.pos = [WIDTH // 2, HEIGHT // 2]
+
+
 
             # Check for ball hitting a brick
             for brick in bricks:
@@ -151,10 +127,13 @@ while True:
                         lives += 2
                          #increase ball velocity?
                     elif brick.color == 'silver':
-                        paddle_vel += 2
+                        ball.vel = [x + 1 for x in ball.vel]
+                        #print(ball.vel)
+                        new_ball = Ball([WIDTH // 2, HEIGHT // 2], [random.randint(2, 3), random.randint(2, 3)])
+                        balls.append(new_ball)
+                        new_ball.draw(screen)
                         # Create a new ball instance BUG - fix the drawing of all the different ping pong balls updating screen method
-                        #new_ball = Ball([WIDTH // 2, HEIGHT // 2], [random.randint(2, 5), random.randint(2, 5)])
-                        #balls.append(new_ball)
+
                     bricks.remove(brick)
                     ball.vel[1] *= -1
                     score += 1
@@ -178,8 +157,8 @@ while True:
     # Draw bricks
     draw_bricks(bricks, screen)
 
-    # Draw the ball
-    ball.draw(screen)
+    for ball in balls:
+        ball.draw(screen)
 
     # Draw the paddle
     pygame.draw.rect(screen, (255, 255, 255), (paddle_pos[0], paddle_pos[1], PADDLE_WIDTH, PADDLE_HEIGHT))
