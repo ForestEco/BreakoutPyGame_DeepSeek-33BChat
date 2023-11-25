@@ -27,9 +27,39 @@ level = 1
 lives = 5
 score = 0
 
-def draw_paddle(paddle_pos, screen):
-    pygame.draw.rect(screen, (255, 255, 255), (paddle_pos[0], paddle_pos[1], PADDLE_WIDTH, PADDLE_HEIGHT))
+def draw_rounded_rect(surface, color, rect, radius=0.9):
+    """
+    Draw a rectangle with rounded corners.
+    """
+    rect = pygame.Rect(rect)
+    color = pygame.Color(*color)
+    alpha = color.a
+    color.a = 0
+    pos = rect.topleft
+    rect.topleft = 0, 0
+    rectangle = pygame.Surface(rect.size, pygame.SRCALPHA)
 
+    circle = pygame.Surface([min(rect.size)*3]*2, pygame.SRCALPHA)
+    pygame.draw.ellipse(circle, (0, 0, 0), circle.get_rect(), 0)
+    circle = pygame.transform.smoothscale(circle, [int(min(rect.size)*radius)]*2)
+
+    radius = rectangle.blit(circle, (0, 0))
+    radius.bottomright = rect.bottomright
+    rectangle.blit(circle, radius)
+    radius.topright = rect.topright
+    rectangle.blit(circle, radius)
+    radius.bottomleft = rect.bottomleft
+    rectangle.blit(circle, radius)
+
+    rectangle.fill((0, 0, 0), rect.inflate(-radius.w, 0))
+    rectangle.fill((0, 0, 0), rect.inflate(0, -radius.h))
+
+    rectangle.fill(color, special_flags=pygame.BLEND_RGBA_MAX)
+    rectangle.fill((255, 255, 255, alpha), special_flags=pygame.BLEND_RGBA_MIN)
+
+    return surface.blit(rectangle, pos)
+def draw_paddle(paddle_pos, screen):
+    draw_rounded_rect(screen, (255, 255, 255), (paddle_pos[0], paddle_pos[1], PADDLE_WIDTH, PADDLE_HEIGHT))
 def draw_bricks(bricks, screen):
     for brick in bricks:
         pygame.draw.rect(screen, pygame.Color(brick.color), brick.rect)
@@ -149,7 +179,7 @@ while True:
     # Draw everything
     screen.fill((0, 0, 0))
     # Draw the score and lives
-    draw_paddle(paddle_pos, screen)
+    #draw_paddle(paddle_pos, screen)
     font = pygame.font.Font(None, 36)
     text = font.render("Score: " + str(score) + " Lives: " + str(lives), 1, (255, 255, 255))
     screen.blit(text, (10, 10))
@@ -161,7 +191,8 @@ while True:
         ball.draw(screen)
 
     # Draw the paddle
-    pygame.draw.rect(screen, (255, 255, 255), (paddle_pos[0], paddle_pos[1], PADDLE_WIDTH, PADDLE_HEIGHT))
+    #pygame.draw.ellipse(screen, (255, 255, 255), (paddle_pos[0], paddle_pos[1], PADDLE_WIDTH, PADDLE_HEIGHT))
+    draw_paddle(paddle_pos, screen)
 
     # Update the display
     pygame.display.flip()
