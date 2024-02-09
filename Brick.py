@@ -11,8 +11,8 @@ class Brick:
         if random.random() < 0.1:
             self.color = 'red'
         else:
-            #self.color = random.choice(['silver'])
-            self.color = random.choice(['green', 'blue', 'cyan', 'magenta', 'yellow', 'silver'])
+            self.color = random.choice(['silver'])
+            #self.color = random.choice(['green', 'blue', 'cyan', 'magenta', 'yellow', 'silver'])
 
     def draw(self, screen):
         pygame.draw.rect(screen, self.color, self.rect)
